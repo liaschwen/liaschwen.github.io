@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Justin & Lia — 8 August 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Cinzel:wght@400;500&family=Jost:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream: #faf6f0;
+    --blush: #c8956a;
+    --rose: #a0623a;
+    --deep: #5c3420;
+    --gold: #c9953e;
+    --dark: #2e1a0e;
+    --mist: #f2ebe0;
+    --terracotta: #c1693a;
+    --burgundy: #7a2e2e;
+    --olive: #6b7040;
+    --mustard: #c9a03e;
+  }
+
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Jost', sans-serif; background: var(--cream); color: var(--dark); overflow-x: hidden; }
+
+  /* ===================== QUIZ OVERLAY ===================== */
+  #quiz-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: var(--dark);
+    display: flex; align-items: center; justify-content: center;
+    padding: 1.5rem;
+    overflow-y: auto;
+  }
+
+  .quiz-box {
+    background: var(--cream);
+    max-width: 620px; width: 100%;
+    padding: 3rem 3rem 2.5rem;
+    position: relative;
+    border-top: 3px solid var(--gold);
+    animation: fadeUp 0.6s ease both;
+  }
+
+  /* Welcome screen */
+  #screen-welcome { text-align: center; }
+  .quiz-eyebrow {
+    font-family: 'Cinzel', serif;
+    font-size: 0.62rem; letter-spacing: 0.3em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 1.2rem;
+  }
+  .quiz-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2rem, 6vw, 3rem); font-weight: 300; font-style: italic;
+    color: var(--deep); line-height: 1.2; margin-bottom: 1rem;
+  }
+  .quiz-subtitle {
+    font-size: 0.88rem; font-weight: 300; line-height: 1.8;
+    color: var(--dark); opacity: 0.7; margin-bottom: 2rem;
+  }
+
+  /* Progress bar */
+  .quiz-progress {
+    display: flex; gap: 0.4rem; margin-bottom: 2rem; justify-content: center;
+  }
+  .progress-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(201,149,62,0.25);
+    transition: background 0.3s;
+  }
+  .progress-dot.active { background: var(--gold); }
+  .progress-dot.done { background: var(--terracotta); }
+
+  /* Question screen */
+  #screen-question { display: none; }
+  .q-number {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem; letter-spacing: 0.25em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 0.8rem;
+  }
+  .q-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.3rem, 3.5vw, 1.7rem); font-weight: 400; font-style: italic;
+    color: var(--deep); line-height: 1.4; margin-bottom: 1.8rem;
+  }
+  .q-options { display: flex; flex-direction: column; gap: 0.75rem; }
+
+  .q-option {
+    padding: 0.9rem 1.2rem;
+    border: 1px solid rgba(201,149,62,0.3);
+    background: white;
+    font-family: 'Jost', sans-serif; font-size: 0.88rem; font-weight: 300;
+    color: var(--dark);
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+    display: flex; align-items: center; gap: 0.8rem;
+  }
+  .q-option:hover:not(:disabled) {
+    border-color: var(--gold); background: #fdf8f0;
+    transform: translateX(4px);
+  }
+  .q-option .opt-letter {
+    font-family: 'Cinzel', serif; font-size: 0.6rem; letter-spacing: 0.1em;
+    color: var(--gold); min-width: 16px;
+  }
+  .q-option.correct { border-color: var(--olive); background: #f0f2e8; }
+  .q-option.correct .opt-letter { color: var(--olive); }
+  .q-option.wrong { border-color: var(--burgundy); background: #f5eaea; }
+  .q-option.wrong .opt-letter { color: var(--burgundy); }
+  .q-option.reveal-correct { border-color: var(--olive); background: #f0f2e8; }
+  .q-option:disabled { cursor: default; transform: none; }
+
+  .q-feedback {
+    margin-top: 1rem; padding: 0.8rem 1rem;
+    font-size: 0.83rem; font-weight: 300; line-height: 1.6;
+    display: none;
+  }
+  .q-feedback.show { display: block; }
+  .q-feedback.good { background: #f0f2e8; color: var(--olive); border-left: 2px solid var(--olive); }
+  .q-feedback.bad { background: #f5eaea; color: var(--burgundy); border-left: 2px solid var(--burgundy); }
+
+  /* Result screens */
+  #screen-pass, #screen-fail { display: none; text-align: center; }
+
+  .result-emoji { font-size: 3rem; margin-bottom: 1rem; }
+  .result-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.8rem, 5vw, 2.6rem); font-weight: 300; font-style: italic;
+    color: var(--deep); margin-bottom: 1rem; line-height: 1.2;
+  }
+  .result-body {
+    font-size: 0.88rem; font-weight: 300; line-height: 1.9;
+    color: var(--dark); opacity: 0.75; margin-bottom: 1.5rem;
+  }
+  .result-score {
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 2rem;
+  }
+
+  /* Rejection letter styling */
+  .rejection-letter {
+    border: 1px solid rgba(122,46,46,0.3);
+    background: white; padding: 1.8rem;
+    text-align: left; margin-bottom: 1.5rem;
+    position: relative;
+  }
+  .rejection-letter::before {
+    content: 'OFFICIAL NOTICE';
+    display: block;
+    font-family: 'Cinzel', serif;
+    font-size: 0.55rem; letter-spacing: 0.3em;
+    color: var(--burgundy); margin-bottom: 1rem;
+  }
+  .rejection-letter p {
+    font-size: 0.85rem; line-height: 1.9; font-weight: 300; color: var(--dark);
+    margin-bottom: 0.8rem;
+  }
+  .rejection-letter .stamp {
+    position: absolute; top: 1rem; right: 1rem;
+    font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.1em;
+    color: var(--burgundy); border: 2px solid var(--burgundy);
+    padding: 0.3rem 0.5rem; transform: rotate(12deg); opacity: 0.7;
+  }
+
+  .override-hint {
+    font-size: 0.75rem; font-weight: 300; color: var(--dark); opacity: 0.4;
+    margin-top: 1rem; font-style: italic;
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-block; padding: 1rem 2.5rem;
+    font-family: 'Cinzel', serif;
+    font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase;
+    cursor: pointer; border: 1px solid var(--gold);
+    background: transparent; color: var(--gold);
+    transition: background 0.3s, color 0.3s;
+    margin: 0.4rem;
+  }
+  .btn:hover { background: var(--gold); color: var(--deep); }
+  .btn-primary { background: var(--gold); color: var(--deep); border-color: var(--gold); }
+  .btn-primary:hover { background: var(--rose); border-color: var(--rose); color: white; }
+  .btn-secret {
+    font-size: 0.75rem; opacity: 1; border-color: var(--gold);
+    color: #2e1a0e; padding: 0.9rem 2rem; font-weight: 400; letter-spacing: 0.05em; text-transform: none;
+    background: rgba(201,149,62,0.15);
+    transition: opacity 0.4s, border-color 0.4s, color 0.4s, background 0.4s;
+  }
+  .btn-secret:hover { opacity: 1; border-color: var(--gold); color: var(--gold); background: transparent; }
+  .btn-next { margin-top: 1.2rem; display: none; }
+
+  .quiz-divider {
+    width: 60px; height: 1px;
+    background: linear-gradient(to right, transparent, var(--gold), transparent);
+    margin: 1.2rem auto;
+  }
+
+
+  /* GALLERY */
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1.2rem;
+    margin-top: 2rem;
+  }
+  .gallery-item {
+    position: relative; overflow: hidden;
+    aspect-ratio: 4/5;
+  }
+  .gallery-item img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s ease;
+    filter: sepia(15%) saturate(90%) brightness(0.97);
+  }
+  .gallery-item:hover img { transform: scale(1.04); }
+  .gallery-item::after {
+    content: '';
+    position: absolute; inset: 0;
+    border: 1px solid rgba(201,149,62,0.25);
+    pointer-events: none;
+  }
+  .gallery-item.tall { aspect-ratio: 3/4; }
+
+  /* ===================== MAIN SITE ===================== */
+  #main-site { display: none; }
+
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; justify-content: center; gap: 3rem; padding: 1.5rem 2rem;
+    background: linear-gradient(to bottom, rgba(250,246,240,0.97), transparent);
+  }
+  nav a {
+    font-family: 'Cinzel', serif; font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--deep); text-decoration: none; transition: color 0.3s;
+  }
+  nav a:hover { color: var(--gold); }
+
+  #hero {
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; position: relative; overflow: hidden; padding: 6rem 2rem 4rem;
+  }
+  .hero-bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 40%, rgba(193,105,58,0.13) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 40% at 15% 80%, rgba(201,149,62,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 50% at 85% 15%, rgba(122,46,46,0.09) 0%, transparent 60%);
+  }
+
+  .corner { position: absolute; opacity: 0.15; }
+  .corner-tl { top: 0; left: 0; }
+  .corner-tr { top: 0; right: 0; transform: scaleX(-1); }
+  .corner-bl { bottom: 0; left: 0; transform: scaleY(-1); }
+  .corner-br { bottom: 0; right: 0; transform: scale(-1); }
+
+  .hero-eyebrow {
+    font-family: 'Cinzel', serif; font-size: 1rem; letter-spacing: 0.35em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 2rem; animation: fadeUp 1s ease 0.2s both;
+  }
+  .hero-names {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(4rem, 12vw, 9rem); font-weight: 300; font-style: italic;
+    line-height: 0.9; color: var(--deep); animation: fadeUp 1s ease 0.4s both;
+  }
+  .hero-ampersand {
+    display: block; font-size: clamp(2rem, 6vw, 5rem);
+    color: var(--gold); margin: 0.2em 0; font-style: normal;
+  }
+  .hero-divider {
+    width: 120px; height: 1px;
+    background: linear-gradient(to right, transparent, var(--gold), transparent);
+    margin: 2.5rem auto; animation: fadeUp 1s ease 0.6s both;
+  }
+  .hero-date {
+    font-family: 'Cinzel', serif; font-size: clamp(0.95rem, 2.5vw, 1.2rem); letter-spacing: 0.25em;
+    color: var(--terracotta); animation: fadeUp 1s ease 0.7s both;
+  }
+  .hero-location {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem; font-style: italic; font-weight: 400; letter-spacing: 0.08em;
+    color: var(--rose); opacity: 0.85; margin-top: 0.5rem; animation: fadeUp 1s ease 0.8s both;
+  }
+  .countdown {
+    display: flex; gap: 2.5rem; margin-top: 3.5rem; animation: fadeUp 1s ease 1s both;
+  }
+  .count-item { text-align: center; }
+  .count-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.8rem; font-weight: 300; color: var(--deep); line-height: 1;
+  }
+  .count-label {
+    font-family: 'Cinzel', serif; font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--gold); margin-top: 0.3rem;
+  }
+  .scroll-hint {
+    display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+    margin-top: 2rem;
+    animation: fadeUp 1s ease 1.3s both;
+  }
+  .scroll-hint span { font-family: 'Cinzel', serif; font-size: 0.55rem; letter-spacing: 0.25em; color: var(--gold); opacity: 0.7; }
+  .scroll-line { width: 1px; height: 40px; background: linear-gradient(to bottom, var(--gold), transparent); animation: scrollPulse 2s ease-in-out infinite; }
+
+  .section-wrap { padding: 6rem 2rem; }
+  .section-inner { max-width: 900px; margin: 0 auto; }
+  .section-label { font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); text-align: center; margin-bottom: 1rem; }
+  .section-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(2.2rem, 5vw, 3.5rem); font-weight: 300; font-style: italic; color: var(--deep); text-align: center; margin-bottom: 1rem; }
+  .section-divider { width: 80px; height: 1px; background: linear-gradient(to right, transparent, var(--gold), transparent); margin: 0 auto 3rem; }
+
+  .story-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; align-items: start; margin-top: 2rem; }
+  .story-block { position: relative; padding: 2rem; }
+  .story-block::before { content: ''; position: absolute; top: 0; left: 0; width: 36px; height: 36px; border-top: 1px solid var(--gold); border-left: 1px solid var(--gold); }
+  .story-block::after { content: ''; position: absolute; bottom: 0; right: 0; width: 36px; height: 36px; border-bottom: 1px solid var(--gold); border-right: 1px solid var(--gold); }
+  .story-year { font-family: 'Cormorant Garamond', serif; font-size: 3.2rem; font-weight: 300; color: var(--terracotta); opacity: 0.35; line-height: 1; margin-bottom: 0.4rem; }
+  .story-heading { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 400; font-style: italic; color: var(--deep); margin-bottom: 0.8rem; }
+  .story-text { font-size: 0.88rem; line-height: 1.9; font-weight: 300; color: var(--dark); opacity: 0.75; }
+
+  .dresscode-banner { background: var(--deep); padding: 3.5rem 2rem; text-align: center; }
+  .dresscode-banner .section-label { color: var(--mustard); }
+  .dresscode-banner .section-title { color: var(--cream); font-size: clamp(1.8rem, 4vw, 2.8rem); }
+  .dresscode-banner .section-divider { background: linear-gradient(to right, transparent, var(--mustard), transparent); margin-bottom: 2rem; }
+  .colour-swatches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 2rem auto 1.5rem; max-width: 400px; background: rgba(255,255,255,0.95); padding: 1.5rem; border-radius: 4px; }
+  .swatch { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+  .swatch-circle { width: 48px; height: 48px; border-radius: 50%; border: 2px solid rgba(201,149,62,0.3); margin: 0 auto; }
+  .swatch-name { font-family: 'Cinzel', serif; font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: #2e1a0e; font-weight: 500; }
+  .dresscode-note { font-size: 1rem; font-weight: 300; color: rgba(250,246,240,0.7); font-style: italic; margin-top: 0.5rem; }
+
+  .timeline { position: relative; max-width: 680px; margin: 0 auto; }
+  .timeline::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: linear-gradient(to bottom, transparent, var(--gold), var(--gold), transparent); transform: translateX(-50%); }
+  .timeline-item { display: flex; align-items: center; margin-bottom: 2.5rem; position: relative; }
+  .timeline-item:nth-child(odd) { flex-direction: row-reverse; }
+  .tl-content { width: calc(50% - 2.5rem); padding: 1.4rem 1.5rem; background: white; border: 1px solid rgba(201,149,62,0.2); }
+  .timeline-item:nth-child(even) .tl-content { margin-left: auto; }
+  .timeline-item:nth-child(odd) .tl-content { margin-right: auto; }
+  .tl-time { font-family: 'Cinzel', serif; font-size: 0.62rem; letter-spacing: 0.2em; color: var(--gold); margin-bottom: 0.35rem; }
+  .tl-title { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-style: italic; color: var(--deep); margin-bottom: 0.25rem; }
+  .tl-desc { font-size: 0.78rem; color: var(--dark); opacity: 0.6; font-weight: 300; line-height: 1.6; }
+  .tl-dot { position: absolute; left: 50%; transform: translateX(-50%); width: 11px; height: 11px; border-radius: 50%; background: var(--gold); border: 2px solid var(--cream); box-shadow: 0 0 0 1px var(--gold); z-index: 1; }
+
+  .travel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 2rem; margin-top: 2rem; }
+  .travel-card { padding: 2rem; border: 1px solid rgba(201,149,62,0.22); background: white; position: relative; overflow: hidden; transition: transform 0.3s, box-shadow 0.3s; }
+  .travel-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(92,52,32,0.1); }
+  .travel-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(to right, var(--terracotta), var(--gold)); }
+  .travel-icon { font-size: 1.7rem; margin-bottom: 1rem; }
+  .travel-card h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-style: italic; color: var(--deep); margin-bottom: 0.5rem; }
+  .travel-card p { font-size: 0.83rem; line-height: 1.8; color: var(--dark); opacity: 0.65; font-weight: 300; }
+  .travel-card a { display: inline-block; margin-top: 1rem; font-family: 'Cinzel', serif; font-size: 0.58rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); text-decoration: none; border-bottom: 1px solid var(--gold); padding-bottom: 2px; }
+
+  .rsvp-wrap { background: var(--deep); padding: 6rem 2rem; }
+  .rsvp-form { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+  .form-group label { font-family: 'Cinzel', serif; font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--blush); }
+  .form-group input, .form-group select, .form-group textarea { background: rgba(255,255,255,0.06); border: 1px solid rgba(200,149,106,0.25); color: var(--cream); padding: 0.9rem 1rem; font-family: 'Jost', sans-serif; font-size: 0.88rem; font-weight: 300; outline: none; transition: border-color 0.3s; -webkit-appearance: none; }
+  .form-group input::placeholder, .form-group textarea::placeholder { color: rgba(250,246,240,0.3); }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--gold); }
+  .form-group select option { background: var(--deep); color: var(--cream); }
+  .radio-group { display: flex; gap: 2rem; flex-wrap: wrap; }
+  .radio-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 300; color: var(--cream); cursor: pointer; }
+  .radio-label input { width: auto; cursor: pointer; accent-color: var(--gold); }
+  .btn-submit { margin-top: 1rem; padding: 1.1rem 3rem; background: transparent; border: 1px solid var(--gold); color: var(--gold); font-family: 'Cinzel', serif; font-size: 0.68rem; letter-spacing: 0.25em; text-transform: uppercase; cursor: pointer; transition: background 0.3s, color 0.3s; align-self: center; }
+  .btn-submit:hover { background: var(--gold); color: var(--deep); }
+  .form-note { text-align: center; font-size: 0.78rem; color: var(--cream); opacity: 0.4; font-weight: 300; }
+
+  footer { background: #1a0e08; padding: 3rem 2rem; text-align: center; }
+  footer .foot-names { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-style: italic; font-weight: 300; color: var(--cream); }
+  footer .foot-date { font-family: 'Cinzel', serif; font-size: 0.58rem; letter-spacing: 0.28em; color: var(--gold); margin-top: 0.5rem; }
+  footer .foot-praise { font-family: 'Cormorant Garamond', serif; font-size: 0.95rem; font-style: italic; color: rgba(250,246,240,0.35); margin-top: 1rem; }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes scrollPulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.8s ease, transform 0.8s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 640px) {
+    .quiz-box { padding: 2rem 1.5rem; }
+    .story-grid { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+    .timeline::before { left: 1rem; }
+    .timeline-item, .timeline-item:nth-child(odd) { flex-direction: column; align-items: flex-start; }
+    .tl-content, .timeline-item:nth-child(odd) .tl-content, .timeline-item:nth-child(even) .tl-content { width: calc(100% - 2.5rem); margin-left: 2.5rem; }
+    .tl-dot { left: 1rem; }
+    .countdown { gap: 1.2rem; }
+    nav { gap: 1.2rem; flex-wrap: wrap; }
+  }
+</style>
+<script async src="https://tally.so/widgets/embed.js"></script>
+</head>
+<body>
+
+<!-- ===================== QUIZ OVERLAY ===================== -->
+<div id="quiz-overlay">
+  <div class="quiz-box">
+
+    <!-- WELCOME -->
+    <div id="screen-welcome">
+      <p class="quiz-eyebrow">Welcome, Guest</p>
+      <h1 class="quiz-title">Before you enter…<br>you must be vetted.</h1>
+      <div class="quiz-divider"></div>
+      <p class="quiz-subtitle">Justin and Lia have personally authorised this entrance exam.<br>5 questions stand between you and the wedding of the year.<br><em>Choose wisely.</em></p>
+      <button class="btn btn-primary" onclick="startQuiz()">Begin the Quiz</button>
+    </div>
+
+    <!-- QUESTION -->
+    <div id="screen-question">
+      <div class="quiz-progress" id="progress-dots"></div>
+      <p class="q-number" id="q-number">Question 1 of 5</p>
+      <p class="q-text" id="q-text"></p>
+      <div class="q-options" id="q-options"></div>
+      <div class="q-feedback" id="q-feedback"></div>
+      <div style="text-align:right;">
+        <button class="btn btn-next" id="btn-next" onclick="nextQuestion()">Next →</button>
+      </div>
+    </div>
+
+    <!-- PASS -->
+    <div id="screen-pass">
+      <div class="result-emoji">🎉</div>
+      <p class="result-score" id="pass-score"></p>
+      <h2 class="result-title">You're officially invited.</h2>
+      <div class="quiz-divider"></div>
+      <p class="result-body">Congratulations — you have proven yourself a worthy guest. Justin and Lia are delighted to welcome you to their wedding.<br><br>Now stop stalling and get inside. ✨</p>
+      <button class="btn btn-primary" onclick="enterSite()">Enter the Website →</button>
+    </div>
+
+    <!-- FAIL -->
+    <div id="screen-fail">
+      <div class="result-emoji">😬</div>
+      <p class="result-score" id="fail-score"></p>
+      <h2 class="result-title">Your invitation has been revoked.</h2>
+      <div class="quiz-divider"></div>
+      <div class="rejection-letter">
+        <div class="stamp">DECLINED</div>
+        <p>Dear Guest,</p>
+        <p>After careful review of your answers, the Wedding Admissions Committee regrets to inform you that your knowledge of Justin and Lia has been found <em>severely lacking</em>.</p>
+        <p>You did not know where their first date was. You showed uncertainty about the legendary Kelvin Grove sokkie. You may or may not know what a "finance" is.</p>
+        <p>For these reasons, your attendance at the wedding on 8 August 2026 has been officially, solemnly, and dramatically <strong>declined</strong>.</p>
+        <p style="margin-bottom:0;">Yours sincerely,<br><em>The Committee for Wedding Guest Excellence</em></p>
+      </div>
+      <br>
+      <button class="btn btn-secret" id="btn-secret" onclick="enterSite()">We're not angry, just disappointed. Jokes! We still love you! Come on in!</button>
+      <p class="override-hint">^ psst… there may be a secret way in 🤫</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===================== MAIN SITE ===================== -->
+<div id="main-site">
+
+<nav>
+  <a href="#gallery">Gallery</a>
+  <a href="#story">Our Story</a>
+  <a href="#schedule">Arrival</a>
+  <a href="#dresscode">Dress Code</a>
+  <a href="#travel">Travel</a>
+  <a href="#registry">Registry</a>
+  <a href="#rsvp">RSVP</a>
+</nav>
+
+<section id="hero">
+  <div class="hero-bg"></div>
+  <svg class="corner corner-tl" width="220" height="220" viewBox="0 0 220 220" fill="none">
+    <path d="M15,15 Q60,15 60,60 Q60,15 105,15" stroke="#c9953e" stroke-width="0.9" fill="none"/>
+    <path d="M15,15 Q15,60 60,60 Q15,60 15,105" stroke="#c9953e" stroke-width="0.9" fill="none"/>
+    <circle cx="60" cy="60" r="3" fill="#c9953e" opacity="0.6"/>
+    <path d="M35,35 Q60,22 85,35" stroke="#c1693a" stroke-width="0.7" fill="none"/>
+    <circle cx="60" cy="22" r="2.5" fill="#c1693a" opacity="0.5"/>
+    <circle cx="22" cy="60" r="2.5" fill="#c1693a" opacity="0.5"/>
+  </svg>
+  <svg class="corner corner-tr" width="220" height="220" viewBox="0 0 220 220" fill="none">
+    <path d="M15,15 Q60,15 60,60 Q60,15 105,15" stroke="#c9953e" stroke-width="0.9" fill="none"/>
+    <path d="M15,15 Q15,60 60,60 Q15,60 15,105" stroke="#c9953e" stroke-width="0.9" fill="none"/>
+    <circle cx="60" cy="60" r="3" fill="#c9953e" opacity="0.6"/>
+  </svg>
+  <svg class="corner corner-bl" width="220" height="220" viewBox="0 0 220 220" fill="none">
+    <path d="M15,15 Q60,15 60,60 Q60,15 105,15" stroke="#c9953e" stroke-width="0.9" fill="none"/>
+    <path d="M15,15 Q15,60 60,60 Q15,60 15,105" stroke="#c9953e" stroke-width="0.9" fill="none"/>
+    <circle cx="60" cy="60" r="3" fill="#c9953e" opacity="0.6"/>
+  </svg>
+  <svg class="corner corner-br" width="220" height="220" viewBox="0 0 220 220" fill="none">
+    <path d="M15,15 Q60,15 60,60 Q60,15 105,15" stroke="#c9953e" stroke-width="0.9" fill="none"/>
+    <path d="M15,15 Q15,60 60,60 Q15,60 15,105" stroke="#c9953e" stroke-width="0.9" fill="none"/>
+    <circle cx="60" cy="60" r="3" fill="#c9953e" opacity="0.6"/>
+  </svg>
+
+  <p class="hero-eyebrow">Forever Begins</p>
+  <h1 class="hero-names">Justin <span class="hero-ampersand">&</span> Lia</h1>
+  <div class="hero-divider"></div>
+  <p class="hero-date">SATURDAY · THE EIGHTH OF AUGUST · 2026</p>
+  <p class="hero-location">La Paris Estate · Franschhoek</p>
+  <div class="countdown" id="countdown">
+    <div class="count-item"><div class="count-num" id="c-days">--</div><div class="count-label">Days</div></div>
+    <div class="count-item"><div class="count-num" id="c-hours">--</div><div class="count-label">Hours</div></div>
+    <div class="count-item"><div class="count-num" id="c-mins">--</div><div class="count-label">Minutes</div></div>
+    <div class="count-item"><div class="count-num" id="c-secs">--</div><div class="count-label">Seconds</div></div>
+  </div>
+  <div class="scroll-hint"><span>Scroll</span><div class="scroll-line"></div></div>
+</section>
+
+
+<!-- GALLERY -->
+<div class="section-wrap" id="gallery" style="background:var(--deep);padding:4rem 2rem;">
+  <div class="section-inner">
+    <h2 class="section-title reveal" style="color:var(--cream); margin-bottom:0.5rem;">A Glimpse of Us</h2>
+    <div class="section-divider reveal" style="background:linear-gradient(to right,transparent,var(--blush),transparent);margin-bottom:2rem;"></div>
+    <div class="gallery-grid reveal">
+      <div class="gallery-item"><img src="https://res.cloudinary.com/dmensr26a/image/upload/v1776339096/image0_1_ztsyrv.jpg" alt="Justin and Lia"/></div>
+      <div class="gallery-item"><img src="https://res.cloudinary.com/dmensr26a/image/upload/v1776339223/image1_1_advhuy.jpg" alt="Justin and Lia"/></div>
+      <div class="gallery-item"><img src="https://res.cloudinary.com/dmensr26a/image/upload/v1776339380/image2_1_tj9kjp.jpg" alt="Justin and Lia"/></div>
+      <div class="gallery-item"><img src="https://res.cloudinary.com/dmensr26a/image/upload/v1776339423/image3_1_v5gk1h.jpg" alt="Justin and Lia"/></div>
+      <div class="gallery-item"><img src="https://res.cloudinary.com/dmensr26a/image/upload/v1776339553/image4_1_vq9uef.jpg" alt="Justin and Lia"/></div>
+      <div class="gallery-item"><img src="https://res.cloudinary.com/dmensr26a/image/upload/v1776339894/image5_1_davxdu.jpg" alt="Justin and Lia"/></div>
+      <div class="gallery-item"><img src="https://res.cloudinary.com/dmensr26a/image/upload/v1776339708/image1_1_vp4iuw.jpg" alt="Justin and Lia"/></div>
+      <div class="gallery-item"><img src="https://res.cloudinary.com/dmensr26a/image/upload/v1776339746/image2_1_jzyaah.jpg" alt="Justin and Lia"/></div>
+      <div class="gallery-item"><img src="https://res.cloudinary.com/dmensr26a/image/upload/v1776339796/image3_1_pmmovv.jpg" alt="Justin and Lia"/></div>
+      <div class="gallery-item"><img src="https://res.cloudinary.com/dmensr26a/image/upload/v1776339845/image4_1_em7voj.jpg" alt="Justin and Lia"/></div>
+      <div class="gallery-item"><img src="https://res.cloudinary.com/dmensr26a/image/upload/v1776339947/image1_1_idsv5g.jpg" alt="Justin and Lia"/></div>
+      <div class="gallery-item"><img src="https://res.cloudinary.com/dmensr26a/image/upload/v1776339991/image2_1_ksmplf.jpg" alt="Justin and Lia"/></div>
+      <div class="gallery-item"><img src="https://res.cloudinary.com/dmensr26a/image/upload/v1776340040/image3_1_wzpm9e.jpg" alt="Justin and Lia"/></div>
+      <div class="gallery-item"><img src="https://res.cloudinary.com/dmensr26a/image/upload/v1776340161/IMG_4835_Original_c8j9vg.jpg" alt="Justin and Lia"/></div>
+      <div class="gallery-item"><img src="https://res.cloudinary.com/dmensr26a/image/upload/v1776418928/image0_2_wnkmgi.jpg" alt="Justin and Lia"/></div>
+    </div>
+  </div>
+</div>
+
+<!-- OUR STORY -->
+<div class="section-wrap" id="story" style="background:var(--cream);">
+  <div class="section-inner">
+    <p class="section-label reveal">Our Story</p>
+    <h2 class="section-title reveal">How It All Began</h2>
+    <div class="section-divider reveal"></div>
+    <div class="story-grid">
+      <div class="story-block reveal">
+        <div class="story-year">2022</div>
+        <h3 class="story-heading">A Passing Introduction</h3>
+        <p class="story-text">We assume this is when we met — neither of us can actually remember. What we're pretty confident about is that it would have been a passing introduction the first time we were on worship band together. Clearly, neither made much of an impression. Yet.</p>
+      </div>
+      <div class="story-block reveal">
+        <div class="story-year">2023</div>
+        <h3 class="story-heading">A Year Best Forgotten</h3>
+        <p class="story-text">A horrible year, honestly. We never spoke. We never interacted. Nothing to report here. Moving swiftly on.</p>
+      </div>
+      <div class="story-block reveal">
+        <div class="story-year">2024</div>
+        <h3 class="story-heading">The Legendary Sokkie</h3>
+        <p class="story-text">Then came the sokkie that changed everything. At a charity event at Kelvin Grove, Lia was literally swept off her feet — and the veil was slightly torn in the process. The tannies approved. A sign of things to come.</p>
+      </div>
+      <div class="story-block reveal">
+        <div class="story-year">2025</div>
+        <h3 class="story-heading">The Veil, Completely Gone</h3>
+        <p class="story-text">LIV January arrived and tore the veil completely. One slightly nerve-wracking coffee, a 5-hour Hudson's first date in Green Point, and a Galileo movie night at Kirstenbosch later — Justin and Lia realised what they had been missing all along. Each other.</p>
+      </div>
+    </div>
+    <div class="reveal" style="margin-top:3rem; text-align:center; padding:2.5rem; border:1px solid rgba(201,149,62,0.3); background:white; max-width:600px; margin-left:auto; margin-right:auto;">
+      <p style="font-family:'Cinzel',serif; font-size:0.62rem; letter-spacing:0.28em; text-transform:uppercase; color:var(--gold); margin-bottom:1rem;">30 January 2026</p>
+      <p style="font-family:'Cormorant Garamond',serif; font-size:1.6rem; font-style:italic; font-weight:300; color:var(--deep); line-height:1.4;">Justin made sure they would never be without each other.</p>
+      <div style="width:60px; height:1px; background:linear-gradient(to right, transparent, var(--gold), transparent); margin:1.2rem auto;"></div>
+      <p style="font-size:0.85rem; font-weight:300; color:var(--dark); opacity:0.65;">And on the 8th of August — it's going to be official.</p>
+      <p style="font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-style:italic; color:var(--terracotta); margin-top:0.5rem;">Praise Jesus! 🙌</p>
+    </div>
+  </div>
+</div>
+
+<!-- SCHEDULE -->
+<div class="section-wrap" id="schedule" style="background:var(--mist);">
+  <div class="section-inner">
+    <p class="section-label reveal">Arrival</p>
+    <h2 class="section-title reveal">Guest Arrival</h2>
+    <div class="section-divider reveal"></div>
+    <div class="reveal" style="text-align:center; max-width:520px; margin:0 auto;">
+      <div style="border:1px solid rgba(201,149,62,0.3); background:white; padding:3rem 2.5rem; position:relative; overflow:hidden;">
+        <div style="position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(to right, var(--terracotta), var(--gold));"></div>
+        <div style="position:absolute; bottom:0; left:0; right:0; height:2px; background:linear-gradient(to right, var(--gold), var(--terracotta));"></div>
+        <p style="font-family:'Cinzel',serif; font-size:0.62rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--gold); margin-bottom:1.5rem;">Doors Open</p>
+        <p style="font-family:'Cormorant Garamond',serif; font-size:5rem; font-weight:300; color:var(--deep); line-height:1; margin-bottom:2rem;">13:00</p>
+        <div style="width:60px; height:1px; background:linear-gradient(to right,transparent,var(--gold),transparent); margin:0 auto 2rem;"></div>
+        <p style="font-family:'Cormorant Garamond',serif; font-size:1.2rem; font-style:italic; font-weight:300; color:var(--deep); line-height:1.8; opacity:0.8;">Guests are warmly welcomed at<br><strong style="font-style:normal; font-weight:400;">La Paris Estate, Franschhoek</strong></p>
+        <div style="width:60px; height:1px; background:linear-gradient(to right,transparent,var(--gold),transparent); margin:1.5rem auto;"></div>
+        <p style="font-family:'Cormorant Garamond',serif; font-size:1rem; font-style:italic; font-weight:300; color:var(--dark); opacity:0.75;">Please be seated by <em>13:30</em></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DRESS CODE -->
+<div class="dresscode-banner" id="dresscode">
+  <div class="section-inner">
+    <p class="section-label reveal">What to Wear</p>
+    <h2 class="section-title reveal">Dress Code</h2>
+    <div class="section-divider reveal"></div>
+    <p class="reveal" style="font-family:'Cormorant Garamond',serif; font-size:1.5rem; font-style:italic; font-weight:300; color:var(--cream); margin-bottom:0.5rem;">Formal · Romantic Palette</p>
+    <p class="dresscode-note reveal">Formal attire in the warm tones of a romantic palette.</p>
+    <div class="colour-swatches reveal">
+      <div class="swatch"><div class="swatch-circle" style="background:#d4956a;"></div><div class="swatch-name">Peach</div></div>
+      <div class="swatch"><div class="swatch-circle" style="background:#c9a96e;"></div><div class="swatch-name">Champagne</div></div>
+      <div class="swatch"><div class="swatch-circle" style="background:#a0623a;"></div><div class="swatch-name">Rust</div></div>
+      <div class="swatch"><div class="swatch-circle" style="background:#c9953e;"></div><div class="swatch-name">Gold</div></div>
+      <div class="swatch"><div class="swatch-circle" style="background:#7a2e2e;"></div><div class="swatch-name">Burgundy</div></div>
+      <div class="swatch"><div class="swatch-circle" style="background:#5c3520;"></div><div class="swatch-name">Brown</div></div>
+    </div>
+    <p class="dresscode-note reveal" style="margin-top:1rem;">🌹 Think warm, elegant and rich — warm, romantic tones.<br><br><strong style="color:rgba(250,246,240,0.85);">Women:</strong> No black, grey, silver, pinks or dusty rose. &nbsp;|&nbsp; <strong style="color:rgba(250,246,240,0.85);">Men:</strong> No black suits. Formal suit or chino and blazer with tie. Same colour palette applies. 😊</p>
+  </div>
+</div>
+
+<!-- TRAVEL -->
+<div class="section-wrap" id="travel" style="background:var(--cream);">
+  <div class="section-inner">
+    <p class="section-label reveal">Getting Here</p>
+    <h2 class="section-title reveal">Travel & Accommodations</h2>
+    <div class="section-divider reveal"></div>
+    <div class="travel-grid">
+
+      <div class="travel-card reveal">
+        <div class="travel-icon">🏨</div>
+        <h3>Accommodations</h3>
+        <p>Franschhoek is filled with beautiful guesthouses and boutique hotels just minutes from the estate. We recommend booking early — August in the Winelands fills up fast!</p>
+        <div style="margin-top:1.2rem; display:flex; flex-direction:column; gap:0.9rem;">
+          <div style="border-top:1px solid rgba(201,149,62,0.15); padding-top:0.9rem;">
+            <a href="https://hotelduvin.co.za/" target="_blank" rel="noopener" style="font-family:'Cormorant Garamond',serif; font-size:1.05rem; font-style:italic; color:var(--deep); text-decoration:none; border-bottom:none; display:block; margin-bottom:0.2rem;">🍷 Hotel du Vin</a>
+            <p style="margin:0; font-size:0.78rem; opacity:0.6; line-height:1.6;">Central and affordable</p>
+          </div>
+          <div style="border-top:1px solid rgba(201,149,62,0.15); padding-top:0.9rem;">
+            <a href="https://www.lepetitparis.co.za/" target="_blank" rel="noopener" style="font-family:'Cormorant Garamond',serif; font-size:1.05rem; font-style:italic; color:var(--deep); text-decoration:none; border-bottom:none; display:block; margin-bottom:0.2rem;">🌸 Le Petit Paris</a>
+            <p style="margin:0; font-size:0.78rem; opacity:0.6; line-height:1.6;">Beautiful guesthouse only available for the night of the wedding</p>
+          </div>
+          <div style="border-top:1px solid rgba(201,149,62,0.15); padding-top:0.9rem;">
+            <a href="https://www.centre-ville.co.za/" target="_blank" rel="noopener" style="font-family:'Cormorant Garamond',serif; font-size:1.05rem; font-style:italic; color:var(--deep); text-decoration:none; border-bottom:none; display:block; margin-bottom:0.2rem;">🏡 Centre-Ville</a>
+            <p style="margin:0; font-size:0.78rem; opacity:0.6; line-height:1.6;">Affordable and central. Also includes a family room.</p>
+          </div>
+          <div style="border-top:1px solid rgba(201,149,62,0.15); padding-top:0.9rem;">
+            <a href="https://www.centre-ville.co.za/" target="_blank" rel="noopener" style="font-family:'Cormorant Garamond',serif; font-size:1.05rem; font-style:italic; color:var(--deep); text-decoration:none; border-bottom:none; display:block; margin-bottom:0.2rem;">🌿 Stony Brook Cottages</a>
+            <p style="margin:0; font-size:0.78rem; opacity:0.6; line-height:1.6;">Affordable self-catering option</p>
+          </div>
+          <div style="border-top:1px solid rgba(201,149,62,0.15); padding-top:0.9rem;">
+            <a href="https://www.franschhoekvillagehouse.co.za/" target="_blank" rel="noopener" style="font-family:'Cormorant Garamond',serif; font-size:1.05rem; font-style:italic; color:var(--deep); text-decoration:none; border-bottom:none; display:block; margin-bottom:0.2rem;">👥 Franschhoek Village House</a>
+            <p style="margin:0; font-size:0.78rem; opacity:0.6; line-height:1.6;">Ideal for a group of six who can split the price!</p>
+          </div>
+          <div style="border-top:1px solid rgba(201,149,62,0.15); padding-top:0.9rem; margin-top:0.3rem;">
+            <p style="margin:0; font-size:0.78rem; line-height:1.7; color:var(--dark); opacity:0.65; font-style:italic;">There are a lot more options to stay over in Franschhoek. A recommendation is to go on <a href="https://www.booking.com/searchresults.html?ss=Franschhoek" target="_blank" rel="noopener" style="color:var(--gold); text-decoration:none; border-bottom:1px solid var(--gold);">Booking.com</a> for discounted prices!</p>
+          </div>
+        </div>
+      </div>
+      <div class="travel-card reveal">
+        <div class="travel-icon">🚗</div>
+        <h3>Getting Around</h3>
+        <p>Renting a car is the best way to explore the Cape Winelands. We will be running a shuttle from Franschhoek village to La Paris Estate on the wedding day.</p>
+        <a href="https://www.google.com/maps/place/?q=place_id:ChIJKaHkM5ylzR0R8rXoHsU2Hjk" target="_blank" rel="noopener">Directions to Venue →</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RSVP -->
+
+<!-- REGISTRY -->
+<div class="section-wrap" id="registry" style="background:var(--mist);">
+  <div class="section-inner">
+    <div class="reveal" style="text-align:center; max-width:580px; margin:0 auto;">
+      <p style="font-family:'Cormorant Garamond',serif; font-size:1.35rem; font-style:italic; font-weight:300; color:var(--deep); line-height:1.7; margin-bottom:1.5rem;">Your presence at our wedding is the greatest gift of all. However, if you'd like to bless us with something special, we've put together a registry for you.</p>
+      <div style="border:1px solid rgba(201,149,62,0.3); background:white; padding:2.5rem; position:relative; overflow:hidden;">
+        <div style="position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(to right, var(--terracotta), var(--gold));"></div>
+        <div style="font-size:2rem; margin-bottom:1rem;">🎁</div>
+        <h3 style="font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-style:italic; color:var(--deep); margin-bottom:0.5rem;">Our Gift Registry</h3>
+        <p style="font-size:0.83rem; font-weight:300; color:var(--dark); opacity:0.6; line-height:1.8; margin-bottom:1.5rem;">Click here to find our registry — anything at all is appreciated!</p>
+        <a href="https://www.yuppiechef.com/yc9499385" target="_blank" style="display:inline-block; padding:0.9rem 2.5rem; font-family:'Cinzel',serif; font-size:0.65rem; letter-spacing:0.22em; text-transform:uppercase; color:var(--gold); border:1px solid var(--gold); text-decoration:none;">View Registry →</a>
+      </div>
+      <div style="border:1px solid rgba(201,149,62,0.3); background:white; padding:2.5rem; position:relative; overflow:hidden; margin-top:1.5rem;">
+        <div style="position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(to right, var(--terracotta), var(--gold));"></div>
+        <div style="font-size:2rem; margin-bottom:1rem;">💛</div>
+        <h3 style="font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-style:italic; color:var(--deep); margin-bottom:0.5rem;">Financial Contributions</h3>
+        <p style="font-size:0.83rem; font-weight:300; color:var(--dark); opacity:0.75; line-height:1.8; margin-bottom:1rem;">If you would prefer to give towards our home together, please find bank details below.</p>
+        <div style="text-align:center; border-top:1px solid rgba(201,149,62,0.2); padding-top:1rem;">
+          <p style="font-size:0.82rem; font-weight:300; color:var(--dark); line-height:2;">
+            <strong>Account Holder:</strong> Justin de Nysschen<br>
+            <strong>Account Type:</strong> Current Account<br>
+            <strong>Bank:</strong> Discovery Bank<br>
+            <strong>Account Number:</strong> 11413272738<br>
+            <strong>Reference:</strong> Wedding + Your Name
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+
+<div class="rsvp-wrap" id="rsvp">
+  <div class="section-inner">
+    <p class="section-label reveal">Join Us</p>
+    <h2 class="section-title reveal" style="color:var(--cream);">Kindly Reply</h2>
+    <div class="section-divider reveal" style="background:linear-gradient(to right, transparent, var(--blush), transparent);"></div>
+    <div style="text-align:center; padding: 2rem 0;">
+      <p style="font-family:'Cormorant Garamond',serif; font-size:1.35rem; font-style:italic; font-weight:300; color:var(--cream); line-height:1.7; margin-bottom:2rem; opacity:0.85;">We would be honoured to have you celebrate this day with us.<br>Please let us know if you will be joining.</p>
+      <button class="btn btn-primary" data-tally-open="Me5Vgp" data-tally-overlay="1" data-tally-emoji-text="🎉" data-tally-emoji-animation="wave" style="font-size:0.8rem; padding:1.2rem 3rem;">RSVP Now</button>
+      <p style="margin-top:1.5rem; font-family:'Cinzel',serif; font-size:0.85rem; letter-spacing:0.15em; font-weight:500; color:var(--cream); opacity:0.85;">Please RSVP by 8 June 2026</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="foot-names">Justin & Lia</div>
+  <div class="foot-date">August 8, 2026 · La Paris Estate, Franschhoek</div>
+  <p class="foot-praise">Praise Jesus — what a journey it's been. 🙌</p>
+</footer>
+
+</div><!-- end main-site -->
+
+<script>
+  // Skip quiz if already completed
+  if (localStorage.getItem('quiz_passed') === 'true') {
+    document.getElementById('quiz-overlay').style.display = 'none';
+    document.getElementById('main-site').style.display = 'block';
+    initSite();
+  }
+
+  // ===================== QUIZ DATA =====================
+  const questions = [
+    {
+      text: "Where did the legendary sokkie take place — the one that swept Lia off her feet (and slightly tore the veil)?",
+      options: ["A church youth camp in Stellenbosch", "A charity event at Kelvin Grove", "A braai at someone's house in Bellville", "A LIV Church event in Cape Town"],
+      correct: 1,
+      feedback: {
+        right: "✓ Correct! Kelvin Grove, charity event, tannies cheering them on. Iconic.",
+        wrong: "✗ It was Kelvin Grove — a charity event. The tannies were there. They approved."
+      }
+    },
+    {
+      text: "Justin and Lia's first official date was at Hudson's. Which branch did they grace with their 5-hour presence?",
+      options: ["V&A Waterfront", "Kloof Street", "Green Point", "Stellenbosch"],
+      correct: 2,
+      feedback: {
+        right: "✓ Green Point! Five whole hours. The staff were probably ready to go home.",
+        wrong: "✗ Green Point, Hudson's. Five hours. They clearly had a lot to talk about."
+      }
+    },
+    {
+      text: "Justin had a whole romantic plan to ask Lia to be his girlfriend at Kirstenbosch — but Lia had other ideas. What actually happened?",
+      options: ["She fell asleep during the movie", "She suggested they leave early and ruined his timing", "She was not having it and delayed things, so he improvised on a picnic blanket instead", "It started raining and they had to run inside"],
+      correct: 2,
+      feedback: {
+        right: "✓ Correct! Lia slightly messed up the plan. He pulled it off on a picnic blanket anyway. Hero.",
+        wrong: "✗ Lia was not cooperating with the plan. He ended up asking her on a picnic blanket instead. Still romantic."
+      }
+    },
+    {
+      text: "What did Lia do when she realised that Justin was proposing to her?",
+      options: ["She burst into tears and knocked him over", "She said yes before he finished the sentence", "She spat out her gum into his hand", "She asked him to repeat the question"],
+      correct: 2,
+      feedback: {
+        right: "✓ The gum. In his hand. Truly the most romantic proposal story ever told.",
+        wrong: "✗ The gum landed in his hand. He proposed anyway. A man of commitment on multiple levels."
+      }
+    },
+    {
+      text: "Ever since a certain typo by their friend Hannah Schaefer, Justin and Lia have been calling each other something other than 'fiancé'. What is it?",
+      options: ["My future", "My finance", "My fiancée (with three e's)", "My fancy"],
+      correct: 1,
+      feedback: {
+        right: "✓ My finance! Hannah Schaefer, we owe you everything.",
+        wrong: "✗ It's 'my finance' — thanks to a beautiful typo by Hannah Schaefer the day after the proposal. It stuck."
+      }
+    }
+  ];
+
+  let current = 0;
+  let score = 0;
+  let answered = false;
+
+  function buildDots() {
+    const dots = document.getElementById('progress-dots');
+    dots.innerHTML = '';
+    questions.forEach((_, i) => {
+      const d = document.createElement('div');
+      d.className = 'progress-dot' + (i === current ? ' active' : (i < current ? ' done' : ''));
+      dots.appendChild(d);
+    });
+  }
+
+  function startQuiz() {
+    current = 0; score = 0;
+    document.getElementById('screen-welcome').style.display = 'none';
+    document.getElementById('screen-question').style.display = 'block';
+    showQuestion();
+  }
+
+  function showQuestion() {
+    answered = false;
+    const q = questions[current];
+    document.getElementById('q-number').textContent = `Question ${current + 1} of ${questions.length}`;
+    document.getElementById('q-text').textContent = q.text;
+
+    const letters = ['A', 'B', 'C', 'D'];
+    const opts = document.getElementById('q-options');
+    opts.innerHTML = '';
+    q.options.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'q-option';
+      btn.innerHTML = `<span class="opt-letter">${letters[i]}</span> ${opt}`;
+      btn.onclick = () => selectAnswer(i);
+      opts.appendChild(btn);
+    });
+
+    const fb = document.getElementById('q-feedback');
+    fb.className = 'q-feedback';
+    fb.textContent = '';
+
+    const next = document.getElementById('btn-next');
+    next.style.display = 'none';
+    next.textContent = current === questions.length - 1 ? 'See My Results →' : 'Next →';
+
+    buildDots();
+  }
+
+  function selectAnswer(chosen) {
+    if (answered) return;
+    answered = true;
+
+    const q = questions[current];
+    const opts = document.querySelectorAll('.q-option');
+
+    opts.forEach((btn, i) => {
+      btn.disabled = true;
+      if (i === q.correct) btn.classList.add('reveal-correct');
+    });
+
+    const fb = document.getElementById('q-feedback');
+    if (chosen === q.correct) {
+      score++;
+      opts[chosen].classList.add('correct');
+      fb.textContent = q.feedback.right;
+      fb.className = 'q-feedback show good';
+    } else {
+      opts[chosen].classList.add('wrong');
+      fb.textContent = q.feedback.wrong;
+      fb.className = 'q-feedback show bad';
+    }
+
+    document.getElementById('btn-next').style.display = 'inline-block';
+    buildDots();
+  }
+
+  function nextQuestion() {
+    current++;
+    if (current < questions.length) {
+      showQuestion();
+    } else {
+      showResult();
+    }
+  }
+
+  function showResult() {
+    document.getElementById('screen-question').style.display = 'none';
+    const pass = score >= 3;
+    if (pass) {
+      document.getElementById('screen-pass').style.display = 'block';
+      document.getElementById('pass-score').textContent = `You scored ${score} out of ${questions.length}`;
+    } else {
+      document.getElementById('screen-fail').style.display = 'block';
+      document.getElementById('fail-score').textContent = `You scored ${score} out of ${questions.length} — not enough, I'm afraid.`;
+    }
+  }
+
+  function retryQuiz() {
+    document.getElementById('screen-fail').style.display = 'none';
+    current = 0; score = 0;
+    document.getElementById('screen-question').style.display = 'block';
+    showQuestion();
+  }
+
+  function enterSite() {
+    localStorage.setItem('quiz_passed', 'true');
+    const overlay = document.getElementById('quiz-overlay');
+    overlay.style.transition = 'opacity 0.6s ease';
+    overlay.style.opacity = '0';
+    setTimeout(() => {
+      overlay.style.display = 'none';
+      document.getElementById('main-site').style.display = 'block';
+      initSite();
+    }, 600);
+  }
+
+  // ===================== SITE INIT =====================
+  function initSite() {
+    const weddingDate = new Date('2026-08-08T14:00:00+02:00');
+    function updateCountdown() {
+      const diff = weddingDate - new Date();
+      if (diff <= 0) {
+        document.getElementById('countdown').innerHTML = '<div style="font-family:Cormorant Garamond,serif;font-size:1.5rem;font-style:italic;color:var(--deep)">Today is the day — Praise Jesus! 🙌</div>';
+        return;
+      }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      document.getElementById('c-days').textContent = String(d).padStart(2,'0');
+      document.getElementById('c-hours').textContent = String(h).padStart(2,'0');
+      document.getElementById('c-mins').textContent = String(m).padStart(2,'0');
+      document.getElementById('c-secs').textContent = String(s).padStart(2,'0');
+    }
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach((e, i) => {
+        if (e.isIntersecting) {
+          setTimeout(() => e.target.classList.add('visible'), i * 70);
+          observer.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.08 });
+    reveals.forEach(el => observer.observe(el));
+  }
+
+  
+</script>
+</body>
+</html>
